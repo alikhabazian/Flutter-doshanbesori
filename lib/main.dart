@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ussd_service/ussd_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -49,15 +50,24 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  makeMyRequest() async {
+    int subscriptionId = 1; // sim card subscription ID
+    String code = "*#21#"; // ussd code payload
+    try {
+      String ussdResponseMessage = await UssdService.makeRequest(
+        subscriptionId,
+        code,
+        Duration(seconds: 10), // timeout (optional) - default is 10 seconds
+      );
+      print("succes! message: $ussdResponseMessage");
+    } catch(e) {
+      debugPrint("error!");
+    }
+  }
 
   void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+    setState(() async{
+      await makeMyRequest();
     });
   }
 
