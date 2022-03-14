@@ -36,6 +36,9 @@ dependencies:
   cupertino_icons: ^1.0.2
   ussd_service: ^0.1.1
   flutter_hooks: ^0.18.2+1
+  permission_handler: ^9.2.0
+  sim_data: ^0.0.2
+
 
 dev_dependencies:
   flutter_test:

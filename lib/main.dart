@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ussd_service/ussd_service.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:sim_data/sim_data.dart';
 
 void main() {
   runApp(const MyApp());
@@ -51,23 +53,42 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   makeMyRequest() async {
-    int subscriptionId = 1; // sim card subscription ID
-    String code = "*#21#"; // ussd code payload
-    try {
-      String ussdResponseMessage = await UssdService.makeRequest(
-        subscriptionId,
-        code,
-        Duration(seconds: 10), // timeout (optional) - default is 10 seconds
-      );
-      print("succes! message: $ussdResponseMessage");
-    } catch(e) {
-      debugPrint("error!");
+    PermissionStatus perStat = await Permission.phone.status;
+    var permission;
+    if (!(perStat.isGranted)) await Permission.phone.request();
+
+    // PermissionStatus perStat = await Permission.phone.status;
+    SimData simData = await SimDataPlugin.getSimData();
+    List<int> subscriptionIds=[];
+    for (var s in simData.cards) {
+      print('Serial number: ${s.subscriptionId} ${s.carrierName}');
+      if(s.carrierName=='IR-MCI'){
+        subscriptionIds.add(s.subscriptionId);
+      }
+
     }
+    subscriptionIds.forEach((subscriptionId) async{
+      String code = "*100*64*1#"; // ussd code payload
+      try {
+        String ussdResponseMessage = await UssdService.makeRequest(
+          subscriptionId,
+          code,
+          Duration(seconds: 10), // timeout (optional) - default is 10 seconds
+        );
+        print("succes! message: $ussdResponseMessage");
+      } catch(e) {
+        debugPrint("error!$e");
+      }
+
+    });
+
+
+
   }
 
   void _incrementCounter() {
-    setState(() async{
-      await makeMyRequest();
+    setState(() {
+      makeMyRequest();
     });
   }
 
