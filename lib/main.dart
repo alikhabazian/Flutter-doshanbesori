@@ -2,9 +2,63 @@ import 'package:flutter/material.dart';
 import 'package:ussd_service/ussd_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sim_data/sim_data.dart';
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'dart:isolate';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+void printHello()async {
+  PermissionStatus perStat = await Permission.phone.status;
+  var permission;
+  if (!(perStat.isGranted)) await Permission.phone.request();
+  DateTime date = DateTime.now();
+
+  var dayofweek=DateFormat('EEEE').format(date);
+  print(dayofweek);
+  if(dayofweek!='Monday'){
+    return;
+  }
+  // PermissionStatus perStat = await Permission.phone.status;
+  SimData simData = await SimDataPlugin.getSimData();
+  List<int> subscriptionIds=[];
+  for (var s in simData.cards) {
+    print('Serial number: ${s.subscriptionId} ${s.carrierName}');
+    if(s.carrierName=='IR-MCI'){
+      subscriptionIds.add(s.subscriptionId);
+    }
+
+  }
+  subscriptionIds.forEach((subscriptionId) async{
+    // String code = "*140*11#";
+    String code = "*100*64*1#"; // ussd code payload
+
+    try {
+      String ussdResponseMessage = await UssdService.makeRequest(
+        subscriptionId,
+        code,
+        Duration(seconds: 10), // timeout (optional) - default is 10 seconds
+      );
+      print("succes! message: $ussdResponseMessage");
+    } catch(e) {
+      debugPrint("error!$e");
+    }
+
+  });
+
+
+}
+int helloAlarmID = 0;
+void main()async{
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await AndroidAlarmManager.initialize();
+  PermissionStatus perStat = await Permission.phone.status;
+
+  if (!(perStat.isGranted)) await Permission.phone.request();
   runApp(const MyApp());
+
+  await AndroidAlarmManager.periodic(const Duration(days: 1), helloAlarmID, printHello,wakeup: true,rescheduleOnReboot: true,allowWhileIdle:true,exact:true,startAt: DateTime.now());
+
 }
 
 class MyApp extends StatelessWidget {
@@ -56,7 +110,10 @@ class _MyHomePageState extends State<MyHomePage> {
     PermissionStatus perStat = await Permission.phone.status;
     var permission;
     if (!(perStat.isGranted)) await Permission.phone.request();
+    DateTime date = DateTime.now();
 
+    var dayofweek=DateFormat('EEEE').format(date);
+    print(dayofweek);
     // PermissionStatus perStat = await Permission.phone.status;
     SimData simData = await SimDataPlugin.getSimData();
     List<int> subscriptionIds=[];
